@@ -188,7 +188,7 @@ export function StepReservationType() {
                             font-bold text-xl mb-1 transition-colors duration-200
                             ${formData.reservaPainel ? 'text-white' : 'text-yellow-200'}
                           `}>
-                            Reservar Painel de Aniversário
+                            Painel de Aniversário
                           </h3>
                           <p className={`
                             text-sm font-medium transition-colors duration-200
@@ -199,7 +199,7 @@ export function StepReservationType() {
                           `}>
                             {formData.reservaPainel 
                               ? '✓ Opção selecionada - Clique para desmarcar' 
-                              : '⚠ Clique para selecionar esta opção'
+                              : '⚠ Clique para selecionar'
                             }
                           </p>
                         </div>
