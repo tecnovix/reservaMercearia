@@ -18,7 +18,7 @@ import { Select } from '../ui/select'
 import { Textarea } from '../ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
-import { CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, AlertCircle, Cake, Users, Heart, Check, Image } from 'lucide-react'
 
 export function StepReservationDetails() {
   const {
@@ -239,42 +239,128 @@ export function StepReservationDetails() {
           {/* Reservation Type Section */}
           <div className="space-y-3">
             <Label>Tipo de Reserva *</Label>
-            <div className="space-y-2">
-              {reservationTypes.map((type) => (
-                <div key={type.value} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id={type.value}
-                    name="tipoReserva"
-                    value={type.value}
-                    checked={formData.tipoReserva === type.value}
-                    onChange={(e) => handleTypeChange(e.target.value)}
-                    className="h-4 w-4 border-gray-300 text-orange-custom-600 focus:ring-2 focus:ring-orange-custom-500"
-                  />
-                  <Label htmlFor={type.value} className="cursor-pointer">
-                    {type.label}
-                  </Label>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 gap-3">
+              {reservationTypes.map((type) => {
+                const isSelected = formData.tipoReserva === type.value
+                const icons = {
+                  aniversario: Cake,
+                  confraternizacao: Users,
+                  reuniao: Heart,
+                }
+                const Icon = icons[type.value] || Cake
+                
+                return (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => handleTypeChange(type.value)}
+                    className={`
+                      relative p-4 rounded-lg border-2 transition-all duration-200 text-left
+                      ${isSelected
+                        ? 'border-orange-custom-600 bg-orange-custom-600/20 shadow-lg shadow-orange-custom-600/20'
+                        : 'border-gray-600 bg-gray-800 hover:border-gray-500 hover:bg-gray-700'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`
+                        flex items-center justify-center w-10 h-10 rounded-lg
+                        ${isSelected ? 'bg-orange-custom-600 text-white' : 'bg-gray-700 text-gray-400'}
+                      `}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span className={`flex-1 font-medium ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                        {type.label}
+                      </span>
+                      {isSelected && (
+                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-custom-600">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           {/* Conditional fields for Aniversário */}
           {formData.tipoReserva === 'aniversario' && (
             <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="reservaPainel"
-                  checked={formData.reservaPainel || false}
-                  onChange={(e) =>
-                    updateFormData({ reservaPainel: e.target.checked })
-                  }
-                  className="h-4 w-4 rounded border-gray-300 text-orange-custom-600 focus:ring-2 focus:ring-orange-custom-500"
-                />
-                <Label htmlFor="reservaPainel" className="cursor-pointer">
-                  Reservar Painel de Aniversário
-                </Label>
+              <div className={`
+                relative p-6 rounded-xl border-2 transition-all duration-300 overflow-hidden
+                ${formData.reservaPainel
+                  ? 'border-orange-custom-600 bg-gradient-to-br from-orange-custom-600/30 to-orange-custom-600/10 shadow-2xl shadow-orange-custom-600/30'
+                  : 'border-yellow-500/60 bg-gradient-to-br from-yellow-500/15 to-yellow-500/5 hover:border-yellow-500 hover:shadow-lg hover:shadow-yellow-500/20'
+                }
+              `}>
+                {/* Background glow effect when selected */}
+                {formData.reservaPainel && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-custom-600/20 to-transparent animate-pulse" />
+                )}
+                
+                <button
+                  type="button"
+                  onClick={() => updateFormData({ reservaPainel: !formData.reservaPainel })}
+                  className="w-full text-left relative z-10"
+                >
+                  <div className="flex items-start">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className={`
+                            font-bold text-xl mb-1 transition-colors duration-200
+                            ${formData.reservaPainel ? 'text-white' : 'text-yellow-200'}
+                          `}>
+                            Reservar Painel de Aniversário
+                          </h3>
+                          <p className={`
+                            text-sm font-medium transition-colors duration-200
+                            ${formData.reservaPainel 
+                              ? 'text-green-300' 
+                              : 'text-yellow-300/80'
+                            }
+                          `}>
+                            {formData.reservaPainel 
+                              ? '✓ Opção selecionada - Clique para desmarcar' 
+                              : '⚠ Clique para selecionar esta opção'
+                            }
+                          </p>
+                        </div>
+                        {/* Large toggle switch */}
+                        <div className={`
+                          relative w-16 h-9 rounded-full transition-all duration-300 flex-shrink-0
+                          ${formData.reservaPainel 
+                            ? 'bg-green-500 shadow-lg shadow-green-500/50' 
+                            : 'bg-gray-600'
+                          }
+                        `}>
+                          <div className={`
+                            absolute top-1 left-1 w-7 h-7 rounded-full bg-white transition-all duration-300 shadow-md
+                            ${formData.reservaPainel ? 'translate-x-7' : 'translate-x-0'}
+                          `}>
+                            {formData.reservaPainel && (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Check className="w-4 h-4 text-green-500" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <p className={`
+                        text-sm font-medium leading-relaxed
+                        ${formData.reservaPainel ? 'text-gray-300' : 'text-gray-400'}
+                      `}>
+                        {formData.reservaPainel ? (
+                          <>A disponibilidade do painel será verificada conforme os detalhes da reserva.</>
+                        ) : (
+                          <>Você precisa marcar esta opção se deseja reservar o painel.</>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </button>
               </div>
 
               {formData.reservaPainel && (
@@ -333,25 +419,43 @@ export function StepReservationDetails() {
           {/* Conditional fields for Confraternização */}
           {formData.tipoReserva === 'confraternizacao' && (
             <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Tipo de Cardápio *</Label>
-                <div className="space-y-2">
-                  {menuTypes.map((menu) => (
-                    <div key={menu.value} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={menu.value}
-                        name="tipoCardapio"
-                        value={menu.value}
-                        checked={formData.tipoCardapio === menu.value}
-                        onChange={(e) => updateFormData({ tipoCardapio: e.target.value })}
-                        className="h-4 w-4 border-gray-300 text-orange-custom-600 focus:ring-2 focus:ring-orange-custom-500"
-                      />
-                      <Label htmlFor={menu.value} className="cursor-pointer">
-                        {menu.label}
-                      </Label>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 gap-3">
+                  {menuTypes.map((menu) => {
+                    const isSelected = formData.tipoCardapio === menu.value
+                    return (
+                      <button
+                        key={menu.value}
+                        type="button"
+                        onClick={() => updateFormData({ tipoCardapio: menu.value })}
+                        className={`
+                          relative p-4 rounded-lg border-2 transition-all duration-200 text-left
+                          ${isSelected
+                            ? 'border-orange-custom-600 bg-orange-custom-600/20 shadow-lg shadow-orange-custom-600/20'
+                            : 'border-gray-600 bg-gray-700 hover:border-gray-500 hover:bg-gray-600'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`
+                            flex items-center justify-center w-10 h-10 rounded-lg
+                            ${isSelected ? 'bg-orange-custom-600 text-white' : 'bg-gray-600 text-gray-400'}
+                          `}>
+                            <Check className="w-5 h-5" />
+                          </div>
+                          <span className={`flex-1 font-medium ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                            {menu.label}
+                          </span>
+                          {isSelected && (
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-custom-600">
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -364,7 +468,7 @@ export function StepReservationDetails() {
                       </p>
                       <ul className="space-y-2 text-gray-200">
                         <li>• Nosso site nós temos todas as orientações sobre a confraternização de empresas.</li>
-                        <li>• Link: <span className="text-orange-custom-400">[Link será adicionado]</span></li>
+                        <li>• Link: <a href="https://www.barmercearia.com.br/empresas" target="_blank" rel="noopener noreferrer" className="text-orange-custom-400 hover:text-orange-custom-300 underline">https://www.barmercearia.com.br/empresas</a></li>
                         <li>• Dúvidas mandar via WhatsApp.</li>
                       </ul>
                     </div>
