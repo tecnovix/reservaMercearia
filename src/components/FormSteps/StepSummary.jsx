@@ -40,7 +40,7 @@ export function StepSummary() {
         }, 3000)
       }
     } catch (error) {
-      setLocalSubmitError(error.message || 'Erro ao enviar reserva')
+      setLocalSubmitError(error.message || 'Não foi possível enviar sua reserva. Tente novamente.')
     }
   }
 
@@ -171,7 +171,7 @@ export function StepSummary() {
             <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm text-red-800 font-medium">
-                Erro ao enviar reserva
+                Não foi possível enviar sua reserva
               </p>
               <p className="text-sm text-red-600 mt-1">{displayError}</p>
             </div>

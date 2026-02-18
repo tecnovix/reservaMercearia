@@ -3,17 +3,17 @@ import { z } from 'zod'
 // Step 1: Personal Data Schema
 export const personalDataSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
-  email: z.string().email('Email inválido'),
+  email: z.string().email('Informe um e-mail válido'),
   telefone: z.string().regex(
     /^\(\d{2}\) \d{5}-\d{4}$/,
-    'Telefone deve estar no formato (XX) XXXXX-XXXX'
+    'Informe o telefone no formato (XX) XXXXX-XXXX'
   ),
   dataNascimento: z.string().refine((date) => {
     const birthDate = new Date(date)
     const today = new Date()
     const age = today.getFullYear() - birthDate.getFullYear()
     return age >= 18 && age <= 120
-  }, 'Idade deve estar entre 18 e 120 anos'),
+  }, 'É necessário ter entre 18 e 120 anos para fazer a reserva'),
 })
 
 // Step 2: Reservation Type Schema
@@ -37,8 +37,8 @@ export const reservationTypeSchema = z.discriminatedUnion('tipoReserva', [
 // Step 3: Reservation Details Schema
 export const reservationDetailsSchema = z.object({
   quantidadePessoas: z.number()
-    .min(4, 'Mínimo 4 pessoas')
-    .max(50, 'Máximo 50 pessoas'),
+    .min(4, 'Reserva mínima de 4 pessoas')
+    .max(50, 'Máximo de 50 pessoas por reserva'),
   dataReserva: z.string().refine((date) => {
     // Parse date string directly to local timezone
     const [year, month, day] = date.split('-').map(Number)
@@ -48,12 +48,12 @@ export const reservationDetailsSchema = z.object({
     today.setHours(0, 0, 0, 0)
     
     return reservationDate >= today
-  }, 'Data não pode ser no passado'),
-  horarioDesejado: z.string().regex(/^\d{2}:\d{2}$/, 'Horário inválido'),
+  }, 'Selecione uma data a partir de hoje'),
+  horarioDesejado: z.string().regex(/^\d{2}:\d{2}$/, 'Selecione um horário'),
   localDesejado: z.enum(['', 'proximo_play_salao', 'proximo_palco_salao', 'deck_lateral_fundo', 'deck_lateral_palco', 'area_externa_frente'], {
-    errorMap: () => ({ message: 'Por favor, selecione um local válido' }),
+    errorMap: () => ({ message: 'Selecione o local desejado para a reserva' }),
   }).refine((val) => val !== '', {
-    message: 'Por favor, selecione um local válido'
+    message: 'Selecione o local desejado para a reserva'
   }),
   observacoes: z.string().max(1000, 'Máximo de 1000 caracteres').optional(),
 })

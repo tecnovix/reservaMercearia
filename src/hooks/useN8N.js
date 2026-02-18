@@ -29,9 +29,9 @@ export function useN8N() {
       let message = result.message
       if (!isAvailable) {
         if (quantidadePessoas < 10) {
-          message = 'Painel disponível apenas para reservas com 10 ou mais pessoas'
+          message = 'O painel só pode ser reservado para grupos com 10 ou mais pessoas. Aumente a quantidade de pessoas acima.'
         } else if (!isPanelAllowedLocation(localDesejado)) {
-          message = 'Disponível em: Deck lateral (fundo), Deck lateral (próximo ao palco) ou Área externa (frente)'
+          message = 'O painel só pode ser reservado nestes locais: Deck lateral (fundo), Deck lateral (próximo ao palco) ou Área externa (frente). Altere o local desejado acima.'
         } else {
           message = result.message
         }
@@ -46,7 +46,7 @@ export function useN8N() {
       setPanelAvailability(finalResult)
       return finalResult
     } catch (err) {
-      const errorMessage = err.message || 'Erro ao verificar disponibilidade'
+      const errorMessage = err.message || 'Não foi possível verificar a disponibilidade do painel. Tente novamente.'
       setPanelAvailabilityError(errorMessage)
       return null
     } finally {
@@ -67,9 +67,9 @@ export function useN8N() {
         return result
       }
 
-      throw new Error('Erro ao processar reserva')
+      throw new Error('Não foi possível processar sua reserva. Tente novamente.')
     } catch (err) {
-      const errorMessage = err.message || 'Erro ao enviar reserva'
+      const errorMessage = err.message || 'Não foi possível enviar sua reserva. Tente novamente.'
       setSubmitError(errorMessage)
       setError(errorMessage)
       throw err

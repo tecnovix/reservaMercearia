@@ -18,7 +18,7 @@ import { Select } from '../ui/select'
 import { Textarea } from '../ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
-import { CheckCircle, XCircle, Loader2, AlertCircle, Cake, Users, Heart, Check, Image } from 'lucide-react'
+import { CheckCircle, Loader2, AlertCircle, AlertTriangle, Cake, Users, Heart, Check, Image, MapPin, X, FileText } from 'lucide-react'
 
 export function StepReservationDetails() {
   const {
@@ -40,7 +40,9 @@ export function StepReservationDetails() {
   const [dateAvailable, setDateAvailable] = useState(true)
   const [availabilityMessage, setAvailabilityMessage] = useState('')
   const [availabilityConfig, setAvailabilityConfig] = useState(null)
-
+  const [mapModalOpen, setMapModalOpen] = useState(false)
+  const [panelModeloModalOpen, setPanelModeloModalOpen] = useState(false)
+  const [panelOrientacoesModalOpen, setPanelOrientacoesModalOpen] = useState(false)
 
   const {
     register,
@@ -147,7 +149,7 @@ export function StepReservationDetails() {
         } else {
           // Exception with empty timeSlots means closed
           setDateAvailable(false)
-          setAvailabilityMessage(exception.message || 'Data indisponível para reservas')
+          setAvailabilityMessage(exception.message || 'Esta data não está disponível para reservas')
           setAvailableTimeSlots([])
         }
         return
@@ -156,7 +158,7 @@ export function StepReservationDetails() {
       // SECOND: Check if date is in blocked dates list
       if (availabilityConfig.blockedDates.includes(dateStr)) {
         setDateAvailable(false)
-        setAvailabilityMessage('Data indisponível para reservas')
+        setAvailabilityMessage('Esta data não está disponível para reservas')
         setAvailableTimeSlots([])
         return
       }
@@ -164,7 +166,7 @@ export function StepReservationDetails() {
       // THIRD: Check if weekday is blocked (only if no exception)
       if (availabilityConfig.blockedWeekdays.includes(weekday)) {
         setDateAvailable(false)
-        setAvailabilityMessage(weekday === 0 ? 'Não atendemos aos domingos' : 'Dia não disponível')
+        setAvailabilityMessage(weekday === 0 ? 'Não atendemos aos domingos' : 'Não atendemos neste dia da semana')
         setAvailableTimeSlots([])
         return
       }
@@ -225,7 +227,26 @@ export function StepReservationDetails() {
   // Get today's date for minimum date validation
   const today = new Date().toISOString().split('T')[0]
 
+  const anyModalOpen = mapModalOpen || panelModeloModalOpen || panelOrientacoesModalOpen
+  useEffect(() => {
+    if (!anyModalOpen) return
+    const onEscape = (e) => {
+      if (e.key === 'Escape') {
+        setMapModalOpen(false)
+        setPanelModeloModalOpen(false)
+        setPanelOrientacoesModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onEscape)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onEscape)
+      document.body.style.overflow = ''
+    }
+  }, [anyModalOpen])
+
   return (
+    <>
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Detalhes da Reserva</CardTitle>
@@ -283,138 +304,6 @@ export function StepReservationDetails() {
               })}
             </div>
           </div>
-
-          {/* Conditional fields for Aniversário */}
-          {formData.tipoReserva === 'aniversario' && (
-            <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
-              <div className={`
-                relative p-6 rounded-xl border-2 transition-all duration-300 overflow-hidden
-                ${formData.reservaPainel
-                  ? 'border-orange-custom-600 bg-gradient-to-br from-orange-custom-600/30 to-orange-custom-600/10 shadow-2xl shadow-orange-custom-600/30'
-                  : 'border-yellow-500/60 bg-gradient-to-br from-yellow-500/15 to-yellow-500/5 hover:border-yellow-500 hover:shadow-lg hover:shadow-yellow-500/20'
-                }
-              `}>
-                {/* Background glow effect when selected */}
-                {formData.reservaPainel && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-custom-600/20 to-transparent animate-pulse" />
-                )}
-                
-                <button
-                  type="button"
-                  onClick={() => updateFormData({ reservaPainel: !formData.reservaPainel })}
-                  className="w-full text-left relative z-10"
-                >
-                  <div className="flex items-start">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className={`
-                            font-bold text-xl mb-1 transition-colors duration-200
-                            ${formData.reservaPainel ? 'text-white' : 'text-yellow-200'}
-                          `}>
-                            Painel de Aniversário
-                          </h3>
-                          <p className={`
-                            text-sm font-medium transition-colors duration-200
-                            ${formData.reservaPainel 
-                              ? 'text-green-300' 
-                              : 'text-yellow-300/80'
-                            }
-                          `}>
-                            {formData.reservaPainel 
-                              ? '✓ Opção selecionada - Clique para desmarcar' 
-                              : '⚠ Clique para selecionar'
-                            }
-                          </p>
-                        </div>
-                        {/* Large toggle switch */}
-                        <div className={`
-                          relative w-16 h-9 rounded-full transition-all duration-300 flex-shrink-0
-                          ${formData.reservaPainel 
-                            ? 'bg-green-500 shadow-lg shadow-green-500/50' 
-                            : 'bg-gray-600'
-                          }
-                        `}>
-                          <div className={`
-                            absolute top-1 left-1 w-7 h-7 rounded-full bg-white transition-all duration-300 shadow-md
-                            ${formData.reservaPainel ? 'translate-x-7' : 'translate-x-0'}
-                          `}>
-                            {formData.reservaPainel && (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Check className="w-4 h-4 text-green-500" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <p className={`
-                        text-sm font-medium leading-relaxed
-                        ${formData.reservaPainel ? 'text-gray-300' : 'text-gray-400'}
-                      `}>
-                        {formData.reservaPainel ? (
-                          <>A disponibilidade do painel será verificada conforme os detalhes da reserva.</>
-                        ) : (
-                          <>Você precisa marcar esta opção se deseja reservar o painel.</>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              </div>
-
-              {formData.reservaPainel && (
-                <>
-                  <div className="space-y-3">
-                    <Label className="text-white font-semibold">Modelo do Painel</Label>
-                    <div className="p-4 bg-gray-700 rounded-lg border border-gray-600">
-                      <div className="flex flex-col items-center space-y-3">
-                        <img
-                          src="/assets/painel.webp"
-                          alt="Modelo do Painel de Aniversário"
-                          className="max-h-64 mx-auto rounded-lg shadow-lg"
-                        />
-                        <p className="text-sm text-gray-300 text-center">
-                          Este é o modelo do painel de aniversário que será disponibilizado gratuitamente
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-white font-semibold">
-                      Orientações
-                    </Label>
-                    <div className="p-4 bg-gray-700 rounded-lg border border-gray-600">
-                      <div className="space-y-3 text-sm">
-                        <div>
-                          <p className="text-orange-custom-600 font-semibold mb-2">
-                            🎉 Orientações do Painel de Aniversário
-                          </p>
-                          <ul className="space-y-1 text-gray-200 ml-4">
-                            <li>• Painel gratuito: inclui apenas a estrutura (não acompanha decoração).</li>
-                            <li>• O painel só pode ser colocado na área externa.</li>
-                            <li>• Válido para reservas a partir de 10 pessoas.</li>
-                          </ul>
-                        </div>
-                        <div>
-                          <p className="text-orange-custom-600 font-semibold mb-2">
-                            ✨ Arco de balões (opcional)
-                          </p>
-                          <ul className="space-y-1 text-gray-200 ml-4">
-                            <li>• R$ 80 com balões inclusos (até 2 cores).</li>
-                            <li>• R$ 40 caso o cliente traga os balões.</li>
-                            <li>• Solicitação com mínimo de 2 dias de antecedência e pagamento via Pix.</li>
-                            <li>• A solicitação deve ser confirmada previamente via WhatsApp.</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
 
           {/* Conditional fields for Confraternização */}
           {formData.tipoReserva === 'confraternizacao' && (
@@ -576,53 +465,143 @@ export function StepReservationDetails() {
               {errors.localDesejado && (
                 <p className="text-sm text-red-500">{errors.localDesejado.message}</p>
               )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full gap-2 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                onClick={() => setMapModalOpen(true)}
+              >
+                <MapPin className="h-4 w-4" />
+                Ver mapa do local
+              </Button>
             </div>
           </div>
 
-          {/* Panel availability status */}
-          {formData.tipoReserva === 'aniversario' &&
-            formData.reservaPainel &&
-            watchedDate && (
-              <div className="p-3 rounded-lg bg-gray-800 border border-custom">
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-white">
-                    Disponibilidade do Painel
-                  </span>
-                  {checkingPanelAvailability ? (
-                    <Badge variant="secondary" className="flex items-center gap-1 w-fit">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Verificando...
-                    </Badge>
-                  ) : panelAvailable === true ? (
-                    <Badge variant="success" className="flex items-center gap-1 w-fit">
-                      <CheckCircle className="h-3 w-3" />
-                      {panelMessage || `Disponível (${2 - panelSlotsUsed} vaga${2 - panelSlotsUsed !== 1 ? 's' : ''})`}
-                    </Badge>
-                  ) : panelAvailable === false ? (
-                    <Badge variant="destructive" className="flex items-center gap-1 w-fit">
-                      <XCircle className="h-3 w-3" />
-                      {panelMessage || 'Indisponível (Limite atingido)'}
-                    </Badge>
-                  ) : null}
-                </div>
-                {panelAvailable === false && (
-                  <div className="mt-3 space-y-2">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => updateFormData({ reservaPainel: false })}
-                      className="w-full"
-                    >
-                      Remover Reserva do Painel
-                    </Button>
-                    <p className="text-xs text-gray-400 text-center">
-                      Remova a reserva do painel ou altere os itens solicitados para continuar com o agendamento
-                    </p>
-                  </div>
+          {/* Conditional fields for Aniversário - após Local Desejado, antes de Observações */}
+          {formData.tipoReserva === 'aniversario' && (
+            <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
+              <div className={`
+                relative p-6 rounded-xl border-2 transition-all duration-300 overflow-hidden
+                ${(formData.reservaPainel && (panelAvailable === false || panelAvailabilityError))
+                  ? 'border-panel-error'
+                  : formData.reservaPainel
+                    ? 'border-orange-custom-600 bg-gradient-to-br from-orange-custom-600/30 to-orange-custom-600/10 shadow-2xl shadow-orange-custom-600/30'
+                    : 'border-yellow-500/60 bg-gradient-to-br from-yellow-500/15 to-yellow-500/5 hover:border-yellow-500 hover:shadow-lg hover:shadow-yellow-500/20'
+                }
+              `}>
+                {formData.reservaPainel && !(panelAvailable === false || panelAvailabilityError) && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-custom-600/20 to-transparent animate-pulse" />
                 )}
+                <button
+                  type="button"
+                  onClick={() => updateFormData({ reservaPainel: !formData.reservaPainel })}
+                  className="w-full text-left relative z-10"
+                >
+                  <div className="flex items-start">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className={`
+                            font-bold text-xl mb-1 transition-colors duration-200 flex items-center gap-2
+                            ${formData.reservaPainel ? 'text-white' : 'text-yellow-200'}
+                          `}>
+                            Painel de Aniversário
+                            {formData.reservaPainel && (panelAvailable === false || panelAvailabilityError) && (
+                              <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-400" aria-hidden />
+                            )}
+                          </h3>
+                          {!formData.reservaPainel && (
+                            <p className="text-sm font-medium text-yellow-300/80 transition-colors duration-200">
+                              ⚠ Clique para selecionar
+                            </p>
+                          )}
+                        </div>
+                        <div className={`
+                          relative w-16 h-9 rounded-full transition-all duration-300 flex-shrink-0
+                          ${formData.reservaPainel 
+                            ? 'bg-green-500 shadow-lg shadow-green-500/50' 
+                            : 'bg-gray-600'
+                          }
+                        `}>
+                          <div className={`
+                            absolute top-1 left-1 w-7 h-7 rounded-full bg-white transition-all duration-300 shadow-md
+                            ${formData.reservaPainel ? 'translate-x-7' : 'translate-x-0'}
+                          `}>
+                            {formData.reservaPainel && (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Check className="w-4 h-4 text-green-500" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <p className={`
+                        text-sm font-medium leading-relaxed
+                        ${formData.reservaPainel ? 'text-gray-300' : 'text-gray-400'}
+                      `}>
+                        {!formData.reservaPainel ? (
+                          <>Você precisa marcar esta opção se deseja reservar o painel.</>
+                        ) : !watchedDate || !watch('localDesejado') ? (
+                          <>Preencha data e local desejado acima para verificar a disponibilidade do painel.</>
+                        ) : (
+                          <span className="flex flex-wrap items-center gap-2">
+                            {checkingPanelAvailability ? (
+                              <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Verificando disponibilidade...
+                              </Badge>
+                            ) : panelAvailable === true ? (
+                              <Badge variant="success" className="flex items-center gap-1 w-fit">
+                                <CheckCircle className="h-3 w-3" />
+                                {panelMessage || `Disponível (${2 - panelSlotsUsed} vaga${2 - panelSlotsUsed !== 1 ? 's' : ''})`}
+                              </Badge>
+                            ) : panelAvailable === false ? (
+                              <span className="flex flex-col gap-1.5">
+                                <Badge variant="destructive" className="w-fit">
+                                  {panelMessage || 'Indisponível (limite atingido)'}
+                                </Badge>
+                                <span className="text-xs text-gray-400">
+                                  Corrija o problema acima ou remova a reserva do painel para continuar.
+                                </span>
+                              </span>
+                            ) : (
+                              <>A disponibilidade do painel será verificada conforme os detalhes da reserva.</>
+                            )}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </button>
               </div>
-            )}
+
+              {formData.reservaPainel && (
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                    onClick={() => setPanelModeloModalOpen(true)}
+                  >
+                    <Image className="h-4 w-4" />
+                    Modelo do Painel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                    onClick={() => setPanelOrientacoesModalOpen(true)}
+                  >
+                    <FileText className="h-4 w-4" />
+                    Orientações
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="observacoes">Observações (opcional)</Label>
@@ -661,5 +640,136 @@ export function StepReservationDetails() {
         </form>
       </CardContent>
     </Card>
+
+    {/* Modal mapa do local */}
+    {mapModalOpen && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+        onClick={() => setMapModalOpen(false)}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mapa do local"
+      >
+        <div
+          className="relative max-w-4xl w-full max-h-[90vh] flex flex-col bg-gray-900 rounded-xl shadow-xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between p-3 border-b border-gray-700">
+            <h3 className="text-lg font-semibold text-white">Mapa do local</h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-gray-700"
+              onClick={() => setMapModalOpen(false)}
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto p-4 flex justify-center bg-gray-800">
+            <img
+              src="/assets/local.webp"
+              alt="Mapa do local"
+              className="max-w-full h-auto rounded-lg object-contain"
+            />
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Modal Modelo do Painel */}
+    {panelModeloModalOpen && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+        onClick={() => setPanelModeloModalOpen(false)}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Modelo do Painel de Aniversário"
+      >
+        <div
+          className="relative max-w-lg w-full max-h-[90vh] flex flex-col bg-gray-900 rounded-xl shadow-xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between p-3 border-b border-gray-700">
+            <h3 className="text-lg font-semibold text-white">Modelo do Painel</h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-gray-700"
+              onClick={() => setPanelModeloModalOpen(false)}
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto p-4 flex flex-col items-center gap-3 bg-gray-800">
+            <img
+              src="/assets/painel.webp"
+              alt="Modelo do Painel de Aniversário"
+              className="max-h-80 w-auto rounded-lg shadow-lg object-contain"
+            />
+            <p className="text-sm text-gray-300 text-center">
+              Este é o modelo do painel de aniversário que será disponibilizado gratuitamente.
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Modal Orientações do Painel */}
+    {panelOrientacoesModalOpen && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+        onClick={() => setPanelOrientacoesModalOpen(false)}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Orientações do Painel de Aniversário"
+      >
+        <div
+          className="relative max-w-lg w-full max-h-[90vh] flex flex-col bg-gray-900 rounded-xl shadow-xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between p-3 border-b border-gray-700">
+            <h3 className="text-lg font-semibold text-white">Orientações</h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-gray-700"
+              onClick={() => setPanelOrientacoesModalOpen(false)}
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto p-4 space-y-4 bg-gray-800 text-sm">
+            <div>
+              <p className="text-orange-custom-600 font-semibold mb-2">
+                🎉 Orientações do Painel de Aniversário
+              </p>
+              <ul className="space-y-1 text-gray-200 ml-4">
+                <li>• Painel gratuito: inclui apenas a estrutura (não acompanha decoração).</li>
+                <li>• O painel só pode ser colocado na área externa.</li>
+                <li>• Válido para reservas a partir de 10 pessoas.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-orange-custom-600 font-semibold mb-2">
+                ✨ Arco de balões (opcional)
+              </p>
+              <ul className="space-y-1 text-gray-200 ml-4">
+                <li>• R$ 80 com balões inclusos (até 2 cores).</li>
+                <li>• R$ 40 caso o cliente traga os balões.</li>
+                <li>• Solicitação com mínimo de 2 dias de antecedência e pagamento via Pix.</li>
+                <li>• A solicitação deve ser confirmada previamente via WhatsApp.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

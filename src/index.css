@@ -193,6 +193,11 @@ input::placeholder, textarea::placeholder {
   border-color: #262D34 !important;
 }
 
+/* Borda vermelha para área do painel em erro (sobrescreve o seletor * global) */
+.border-panel-error {
+  border-color: rgb(239 68 68) !important; /* red-500 */
+}
+
 /* Forçar bordas específicas para o card principal */
 .rounded-2xl.border {
   border-color: #262D34 !important;

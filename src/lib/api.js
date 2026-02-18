@@ -46,11 +46,11 @@ export async function checkPanelAvailability(date) {
       return {
         available: true,
         count: 0,
-        message: 'Não foi possível verificar a disponibilidade. Continuando com a reserva.',
+        message: 'Não foi possível verificar a disponibilidade do painel. Você pode continuar com a reserva.',
       }
     }
 
-    throw new Error('Erro ao verificar disponibilidade do painel')
+    throw new Error('Não foi possível verificar a disponibilidade do painel. Tente novamente.')
   }
 }
 
@@ -83,7 +83,7 @@ export async function submitReservation(data) {
       }
     }
 
-    throw new Error(error.response?.data?.message || 'Erro ao enviar reserva')
+    throw new Error(error.response?.data?.message || 'Não foi possível enviar sua reserva. Tente novamente.')
   }
 }
 
