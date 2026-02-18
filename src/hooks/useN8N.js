@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { checkPanelAvailability, submitReservation } from '../lib/api'
+import { checkPanelAvailability, checkSpotsAvailability, submitReservation } from '../lib/api'
 import { isPanelAllowedLocation } from '../lib/utils'
 import useReservationStore from '../store/reservationStore'
 
@@ -11,6 +11,9 @@ export function useN8N() {
     setCheckingPanelAvailability,
     setPanelAvailability,
     setPanelAvailabilityError,
+    setCheckingSpotsAvailability,
+    setSpotsAvailability,
+    setSpotsAvailabilityError,
     setSubmitting,
     setSubmitError,
     setSubmitSuccess,
@@ -54,6 +57,27 @@ export function useN8N() {
     }
   }, [setCheckingPanelAvailability, setPanelAvailability, setPanelAvailabilityError])
 
+  const checkSpotsAvailabilityHandler = useCallback(async (date, localDesejado) => {
+    if (!date || !localDesejado) {
+      setSpotsAvailabilityError(null)
+      setSpotsAvailability({ available: null, message: '' })
+      return null
+    }
+    setCheckingSpotsAvailability(true)
+    setSpotsAvailabilityError(null)
+    try {
+      const result = await checkSpotsAvailability(date, localDesejado)
+      setSpotsAvailability(result)
+      return result
+    } catch (err) {
+      const errorMessage = err.message || 'Não foi possível verificar a disponibilidade de vagas. Tente novamente.'
+      setSpotsAvailabilityError(errorMessage)
+      return null
+    } finally {
+      setCheckingSpotsAvailability(false)
+    }
+  }, [setCheckingSpotsAvailability, setSpotsAvailability, setSpotsAvailabilityError])
+
   const submitReservationHandler = useCallback(async (data) => {
     setSubmitting(true)
     setSubmitError(null)
@@ -82,6 +106,7 @@ export function useN8N() {
     loading,
     error,
     checkPanelAvailability: checkPanelAvailabilityHandler,
+    checkSpotsAvailability: checkSpotsAvailabilityHandler,
     submitReservation: submitReservationHandler,
   }
 }

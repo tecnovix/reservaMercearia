@@ -1,0 +1,28 @@
+{
+  "_descricao": "Webhook check-spots-available: request enviado pelo frontend e resposta esperada (formato simples)",
+  "_ordem": "1) Sempre antes: GET check-availability-mercearia (carrega ao abrir o passo). 2) Só se a data estiver disponível por esse config: GET check-spots-available com date e localDesejado (500ms após preencher data e local).",
+  "_quando_chama": "No passo 2 (Detalhes da Reserva), 500ms depois de preencher Data da Reserva E Local Desejado. A data deve ser válida segundo check-availability-mercearia. Reinicie o dev server (npm run dev) após alterar .env.",
+  "request": {
+    "method": "GET",
+    "url": "https://webhook.builder.autonix.com.br/webhook/check-spots-available",
+    "query_params": {
+      "date": "2025-02-20",
+      "localDesejado": "proximo_play_salao"
+    },
+    "valores_localDesejado": [
+      "proximo_play_salao",
+      "proximo_palco_salao",
+      "deck_lateral_fundo",
+      "deck_lateral_palco",
+      "area_externa_frente"
+    ]
+  },
+  "response_disponivel": {
+    "available": true,
+    "message": "Dia e local com vagas disponíveis"
+  },
+  "response_indisponivel": {
+    "available": false,
+    "message": "Sem vagas para esta data e local"
+  }
+}

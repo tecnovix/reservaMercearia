@@ -30,16 +30,22 @@ export function StepReservationDetails() {
     panelAvailable,
     panelSlotsUsed,
     panelAvailabilityError,
+    checkingSpotsAvailability,
+    spotsAvailable,
+    spotsAvailabilityError,
+    spotsMessage,
+    availabilityConfig,
+    setAvailabilityConfig,
   } = useReservationStore()
 
-  const { checkPanelAvailability } = useN8N()
+  const { checkPanelAvailability, checkSpotsAvailability } = useN8N()
   const [dateDebounce, setDateDebounce] = useState(null)
+  const [spotsDebounce, setSpotsDebounce] = useState(null)
   const [panelMessage, setPanelMessage] = useState('')
   const [availableTimeSlots, setAvailableTimeSlots] = useState([])
   const [checkingAvailability, setCheckingAvailability] = useState(false)
   const [dateAvailable, setDateAvailable] = useState(true)
   const [availabilityMessage, setAvailabilityMessage] = useState('')
-  const [availabilityConfig, setAvailabilityConfig] = useState(null)
   const [mapModalOpen, setMapModalOpen] = useState(false)
   const [panelModeloModalOpen, setPanelModeloModalOpen] = useState(false)
   const [panelOrientacoesModalOpen, setPanelOrientacoesModalOpen] = useState(false)
@@ -51,6 +57,7 @@ export function StepReservationDetails() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(reservationDetailsSchema),
+    mode: 'onChange',
     defaultValues: {
       quantidadePessoas: formData.quantidadePessoas || 4,
       dataReserva: formData.dataReserva || '',
@@ -75,125 +82,145 @@ export function StepReservationDetails() {
   }
 
 
-  // Load availability configuration on mount
+  // Sempre que a data mudar: buscar config atualizada (check-availability-mercearia)
   useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const config = await getAvailabilityConfig()
-        setAvailabilityConfig(config)
-      } catch (error) {
-        console.error('Error loading availability config:', error)
-        // Use defaults if API fails
-        setAvailabilityConfig({
-          defaultTimeSlots: ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30'],
-          blockedDates: [],
-          exceptions: [],
-          blockedWeekdays: [0],
-          message: ''
-        })
-      }
-    }
-    loadConfig()
-  }, [])
-
-  // Check date availability based on configuration
-  useEffect(() => {
-    if (watchedDate && availabilityConfig) {
-      const date = new Date(watchedDate + 'T00:00:00') // Ensure correct date parsing
-      const now = new Date()
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      
-      // Normalize date to local timezone for comparison
-      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-
-      // Check if date is in the past
-      if (localDate < today) {
-        setDateAvailable(false)
-        setAvailabilityMessage('Não é possível fazer reservas para datas passadas')
-        setAvailableTimeSlots([])
-        return
-      }
-
-      // Check if it's same day reservation after 6:00 PM
-      if (localDate.getTime() === today.getTime() && now.getHours() >= 18) {
-        setDateAvailable(false)
-        setAvailabilityMessage('As reservas para hoje já foram encerradas')
-        setAvailableTimeSlots([])
-        return
-      }
-
-      const weekday = date.getDay()
-      const dateStr = watchedDate
-
-      // FIRST: Check for exceptions (exceptions override everything)
-      const exception = availabilityConfig.exceptions.find(e => e.date === dateStr)
-      if (exception) {
-        if (exception.timeSlots && exception.timeSlots.length > 0) {
-          // Exception date with special time slots (overrides weekday blocks)
-          setDateAvailable(true)
-          setAvailableTimeSlots(exception.timeSlots)
-          setAvailabilityMessage(exception.message || '')
-
-          // Still check panel availability for exceptions
-          if (formData.tipoReserva === 'aniversario' && formData.reservaPainel) {
-            clearTimeout(dateDebounce)
-            const timeout = setTimeout(async () => {
-              const result = await checkPanelAvailability(watchedDate, watchedQuantidadePessoas, watchedLocalDesejado)
-              if (result) {
-                setPanelMessage(result.message || '')
-              }
-            }, 500)
-            setDateDebounce(timeout)
-          }
-        } else {
-          // Exception with empty timeSlots means closed
-          setDateAvailable(false)
-          setAvailabilityMessage(exception.message || 'Esta data não está disponível para reservas')
-          setAvailableTimeSlots([])
+    if (!watchedDate) return
+    let cancelled = false
+    setCheckingAvailability(true)
+    getAvailabilityConfig()
+      .then((config) => {
+        if (!cancelled) setAvailabilityConfig(config)
+      })
+      .catch((err) => {
+        console.error('Error loading availability config on date change:', err)
+        if (!cancelled) {
+          setAvailabilityConfig({
+            defaultTimeSlots: ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30'],
+            blockedDates: [],
+            exceptions: [],
+            blockedWeekdays: [0],
+            message: '',
+          })
         }
-        return
-      }
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingAvailability(false)
+      })
+    return () => { cancelled = true }
+  }, [watchedDate, setAvailabilityConfig])
 
-      // SECOND: Check if date is in blocked dates list
-      if (availabilityConfig.blockedDates.includes(dateStr)) {
-        setDateAvailable(false)
-        setAvailabilityMessage('Esta data não está disponível para reservas')
-        setAvailableTimeSlots([])
-        return
-      }
-
-      // THIRD: Check if weekday is blocked (only if no exception)
-      if (availabilityConfig.blockedWeekdays.includes(weekday)) {
-        setDateAvailable(false)
-        setAvailabilityMessage(weekday === 0 ? 'Não atendemos aos domingos' : 'Não atendemos neste dia da semana')
-        setAvailableTimeSlots([])
-        return
-      }
-
-      // FINALLY: Use default time slots for normal days
+  // Aplica a config de disponibilidade na data selecionada (blockedDates, blockedWeekdays, exceptions, defaultTimeSlots)
+  useEffect(() => {
+    if (!watchedDate) {
+      setAvailableTimeSlots([])
       setDateAvailable(true)
-      setAvailableTimeSlots(availabilityConfig.defaultTimeSlots)
       setAvailabilityMessage('')
+      return
+    }
+    if (!availabilityConfig) return
 
-      // Check panel availability if needed
-      if (formData.tipoReserva === 'aniversario' && formData.reservaPainel) {
-        clearTimeout(dateDebounce)
-        const timeout = setTimeout(async () => {
-          const result = await checkPanelAvailability(watchedDate, watchedQuantidadePessoas, watchedLocalDesejado)
-          if (result) {
-            setPanelMessage(result.message || '')
-          }
-        }, 500)
-        setDateDebounce(timeout)
-        return () => clearTimeout(timeout)
+    const date = new Date(watchedDate + 'T00:00:00')
+    const now = new Date()
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+    if (localDate < today) {
+      setDateAvailable(false)
+      setAvailabilityMessage('Não é possível fazer reservas para datas passadas')
+      setAvailableTimeSlots([])
+      return
+    }
+
+    if (localDate.getTime() === today.getTime() && now.getHours() >= 18) {
+      setDateAvailable(false)
+      setAvailabilityMessage('As reservas para hoje já foram encerradas')
+      setAvailableTimeSlots([])
+      return
+    }
+
+    const weekday = date.getDay()
+    const dateStr = watchedDate
+    const exceptions = Array.isArray(availabilityConfig.exceptions) ? availabilityConfig.exceptions : []
+    const blockedDates = Array.isArray(availabilityConfig.blockedDates) ? availabilityConfig.blockedDates : []
+    const blockedWeekdays = Array.isArray(availabilityConfig.blockedWeekdays) ? availabilityConfig.blockedWeekdays : [0]
+    const defaultTimeSlots = Array.isArray(availabilityConfig.defaultTimeSlots) ? availabilityConfig.defaultTimeSlots : ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30']
+
+    const exception = exceptions.find((e) => e && e.date === dateStr)
+    if (exception) {
+      if (exception.timeSlots && exception.timeSlots.length > 0) {
+        setDateAvailable(true)
+        setAvailableTimeSlots(exception.timeSlots)
+        setAvailabilityMessage(exception.message || '')
+        if (formData.tipoReserva === 'aniversario' && formData.reservaPainel) {
+          clearTimeout(dateDebounce)
+          const t = setTimeout(() => {
+            checkPanelAvailability(watchedDate, watchedQuantidadePessoas, watchedLocalDesejado).then((r) => r && setPanelMessage(r.message || ''))
+          }, 500)
+          setDateDebounce(t)
+          return () => clearTimeout(t)
+        }
+      } else {
+        setDateAvailable(false)
+        setAvailabilityMessage(exception.message || 'Esta data não está disponível para reservas')
+        setAvailableTimeSlots([])
       }
+      return
+    }
+
+    if (blockedDates.includes(dateStr)) {
+      setDateAvailable(false)
+      setAvailabilityMessage('Esta data não está disponível para reservas')
+      setAvailableTimeSlots([])
+      return
+    }
+
+    if (blockedWeekdays.includes(weekday)) {
+      setDateAvailable(false)
+      setAvailabilityMessage(weekday === 0 ? 'Não atendemos aos domingos' : 'Não atendemos neste dia da semana')
+      setAvailableTimeSlots([])
+      return
+    }
+
+    setDateAvailable(true)
+    setAvailableTimeSlots(defaultTimeSlots)
+    setAvailabilityMessage('')
+
+    if (formData.tipoReserva === 'aniversario' && formData.reservaPainel) {
+      clearTimeout(dateDebounce)
+      const t = setTimeout(() => {
+        checkPanelAvailability(watchedDate, watchedQuantidadePessoas, watchedLocalDesejado).then((r) => r && setPanelMessage(r.message || ''))
+      }, 500)
+      setDateDebounce(t)
+      return () => clearTimeout(t)
     }
   }, [watchedDate, watchedQuantidadePessoas, watchedLocalDesejado, availabilityConfig, formData.tipoReserva, formData.reservaPainel])
+
+  // 2) Só depois: verificação de vagas (check-spots-available). Só chama se 1) já tiver config de disponibilidade e data disponível.
+  useEffect(() => {
+    if (!watchedDate || !watchedLocalDesejado) {
+      if (spotsDebounce) clearTimeout(spotsDebounce)
+      checkSpotsAvailability('', '')
+      return
+    }
+    // Só chama check-spots-available se check-availability-mercearia já foi aplicado (config carregado) e a data está disponível
+    if (!availabilityConfig || !dateAvailable) return
+    if (spotsDebounce) clearTimeout(spotsDebounce)
+    const timeout = setTimeout(async () => {
+      await checkSpotsAvailability(watchedDate, watchedLocalDesejado)
+    }, 500)
+    setSpotsDebounce(timeout)
+    return () => clearTimeout(timeout)
+  }, [watchedDate, watchedLocalDesejado, dateAvailable, availabilityConfig])
 
   const onSubmit = (data) => {
     // Validate reservation type
     if (!formData.tipoReserva) {
+      return
+    }
+
+    // Vagas (data + local): bloquear se indisponível
+    if (watchedDate && watchedLocalDesejado && spotsAvailable === false) {
       return
     }
 
@@ -373,12 +400,14 @@ export function StepReservationDetails() {
               <Input
                 id="quantidadePessoas"
                 type="number"
-                min="4"
-                max="50"
+                min={4}
+                max={50}
+                className={errors.quantidadePessoas ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                aria-invalid={!!errors.quantidadePessoas}
                 {...register('quantidadePessoas', { valueAsNumber: true })}
               />
               {errors.quantidadePessoas && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-red-500" role="alert">
                   {errors.quantidadePessoas.message}
                 </p>
               )}
@@ -418,11 +447,13 @@ export function StepReservationDetails() {
               <Select
                 id="horarioDesejado"
                 {...register('horarioDesejado')}
-                disabled={!watchedDate || !dateAvailable || availableTimeSlots.length === 0}
+                disabled={!watchedDate || checkingAvailability || !dateAvailable || availableTimeSlots.length === 0}
               >
                 <option value="">
                   {!watchedDate
                     ? 'Selecione primeiro a data'
+                    : checkingAvailability
+                    ? 'Verificando disponibilidade...'
                     : !dateAvailable
                     ? 'Data indisponível'
                     : availableTimeSlots.length === 0
@@ -445,9 +476,9 @@ export function StepReservationDetails() {
                   Selecione a data para ver os horários disponíveis
                 </p>
               )}
-              {watchedDate && dateAvailable && availableTimeSlots.length === 0 && !availabilityConfig && (
+              {watchedDate && (checkingAvailability || (dateAvailable && availableTimeSlots.length === 0 && availabilityConfig)) && (
                 <p className="text-sm text-yellow-600">
-                  Carregando horários disponíveis...
+                  {checkingAvailability ? 'Verificando disponibilidade da data...' : 'Carregando horários disponíveis...'}
                 </p>
               )}
             </div>
@@ -464,6 +495,25 @@ export function StepReservationDetails() {
               </Select>
               {errors.localDesejado && (
                 <p className="text-sm text-red-500">{errors.localDesejado.message}</p>
+              )}
+              {watchedDate && watchedLocalDesejado && dateAvailable && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {checkingSpotsAvailability ? (
+                    <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Verificando vagas...
+                    </Badge>
+                  ) : spotsAvailable === true ? (
+                    <Badge variant="success" className="flex items-center gap-1 w-fit">
+                      <CheckCircle className="h-3 w-3" />
+                      {spotsMessage || 'Disponível'}
+                    </Badge>
+                  ) : spotsAvailable === false ? (
+                    <Badge variant="destructive" className="w-fit">
+                      {spotsAvailabilityError || spotsMessage || 'Sem vagas para esta data e local'}
+                    </Badge>
+                  ) : null}
+                </div>
               )}
               <Button
                 type="button"
@@ -629,6 +679,9 @@ export function StepReservationDetails() {
               disabled={
                 !formData.tipoReserva ||
                 !dateAvailable ||
+                (watchedDate &&
+                  watchedLocalDesejado &&
+                  (checkingSpotsAvailability || spotsAvailable === false || spotsAvailable === null)) ||
                 (formData.tipoReserva === 'aniversario' &&
                   formData.reservaPainel &&
                   panelAvailable === false)

@@ -3,6 +3,7 @@ import axios from 'axios'
 const N8N_API_URL = import.meta.env.VITE_N8N_API_URL || 'http://localhost:5678/webhook/check-panel-availability-mercearia'
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/booking-mercearia'
 const N8N_AVAILABILITY_URL = import.meta.env.VITE_N8N_AVAILABILITY_URL || 'https://webhook.builder.autonix.com.br/webhook/check-availability-mercearia'
+const N8N_SPOTS_AVAILABLE_URL = import.meta.env.VITE_N8N_SPOTS_AVAILABLE_URL || 'https://webhook.builder.autonix.com.br/webhook/check-spots-available'
 
 const apiClient = axios.create({
   timeout: 10000,
@@ -54,6 +55,43 @@ export async function checkPanelAvailability(date) {
   }
 }
 
+/**
+ * Verifica disponibilidade de vagas para uma data e local.
+ * POST envia { date, localDesejado }. Resposta esperada: { available: boolean, message?: string }.
+ * @param {string} date - Data no formato YYYY-MM-DD
+ * @param {string} localDesejado - Valor do local (ex: proximo_play_salao, deck_lateral_fundo)
+ * @returns {Promise<{ available: boolean, message?: string }>}
+ */
+export async function checkSpotsAvailability(date, localDesejado) {
+  const url = N8N_SPOTS_AVAILABLE_URL
+  if (import.meta.env.DEV) {
+    console.log('[check-spots-available] Chamando GET:', url, { date, localDesejado })
+  }
+  try {
+    const response = await apiClient.get(url, {
+      params: { date, localDesejado },
+    })
+
+    const data = response.data || {}
+    return {
+      available: data.available ?? true,
+      message: data.message ?? '',
+    }
+  } catch (error) {
+    console.error('Error checking spots availability:', { date, localDesejado, error })
+
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      return {
+        available: true,
+        message: 'Não foi possível verificar vagas. Você pode continuar com a reserva.',
+      }
+    }
+
+    const msg = error.response?.data?.message || error.message
+    throw new Error(msg || 'Não foi possível verificar a disponibilidade de vagas. Tente novamente.')
+  }
+}
+
 export async function submitReservation(data) {
   try {
     const response = await retryRequest(async () => {
@@ -87,10 +125,14 @@ export async function submitReservation(data) {
   }
 }
 
-// Get availability configuration from N8N
+// Get availability configuration from N8N (check-availability-mercearia)
 export async function getAvailabilityConfig() {
+  const url = N8N_AVAILABILITY_URL
+  if (import.meta.env.DEV) {
+    console.log('[check-availability-mercearia] Chamando GET:', url)
+  }
   try {
-    const response = await apiClient.get(N8N_AVAILABILITY_URL)
+    const response = await apiClient.get(url)
 
     // Expected response structure:
     // {
@@ -104,22 +146,27 @@ export async function getAvailabilityConfig() {
     //   message: string
     // }
 
+    const data = response.data || {}
+    const defaultTimeSlots = Array.isArray(data.defaultTimeSlots) && data.defaultTimeSlots.length > 0
+      ? data.defaultTimeSlots
+      : generateDefaultTimeSlots()
+    const blockedDates = Array.isArray(data.blockedDates) ? data.blockedDates : []
+    const exceptions = Array.isArray(data.exceptions) ? data.exceptions : []
+    const blockedWeekdays = Array.isArray(data.blockedWeekdays) ? data.blockedWeekdays : [0]
     return {
-      defaultTimeSlots: response.data.defaultTimeSlots || generateDefaultTimeSlots(),
-      blockedDates: response.data.blockedDates || [],
-      exceptions: response.data.exceptions || [],
-      blockedWeekdays: response.data.blockedWeekdays || [0], // Domingo bloqueado por padrão
-      message: response.data.message || ''
+      defaultTimeSlots,
+      blockedDates,
+      exceptions,
+      blockedWeekdays,
+      message: typeof data.message === 'string' ? data.message : ''
     }
   } catch (error) {
     console.error('Error getting availability config:', error)
-
-    // Return default configuration if API fails
     return {
       defaultTimeSlots: generateDefaultTimeSlots(),
       blockedDates: [],
       exceptions: [],
-      blockedWeekdays: [0], // Domingo bloqueado por padrão
+      blockedWeekdays: [0],
       message: ''
     }
   }

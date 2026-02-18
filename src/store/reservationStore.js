@@ -29,6 +29,15 @@ const initialState = {
   panelAvailable: null,
   panelSlotsUsed: 0,
 
+  // Spots availability (data + local)
+  checkingSpotsAvailability: false,
+  spotsAvailabilityError: null,
+  spotsAvailable: null,
+  spotsMessage: '',
+
+  // Availability config (check-availability-mercearia), carregado ao iniciar o app
+  availabilityConfig: null,
+
   // Form submission states
   submitting: false,
   submitError: null,
@@ -67,6 +76,21 @@ const useReservationStore = create(
         panelAvailable: null,
         panelSlotsUsed: 0,
       }),
+
+      // Spots availability actions
+      setCheckingSpotsAvailability: (checking) => set({ checkingSpotsAvailability: checking }),
+      setSpotsAvailability: (data) => set({
+        spotsAvailable: data.available,
+        spotsMessage: data.message ?? '',
+        spotsAvailabilityError: null,
+      }),
+      setSpotsAvailabilityError: (error) => set({
+        spotsAvailabilityError: error,
+        spotsAvailable: null,
+        spotsMessage: '',
+      }),
+
+      setAvailabilityConfig: (config) => set({ availabilityConfig: config }),
 
       // Submission actions
       setSubmitting: (submitting) => set({ submitting }),
@@ -142,6 +166,7 @@ const useReservationStore = create(
       partialize: (state) => ({
         formData: state.formData,
         currentStep: state.currentStep,
+        // availabilityConfig não persiste; é recarregado ao abrir o app
       }),
     }
   )

@@ -5,12 +5,34 @@ import { StepPersonalData } from './components/FormSteps/StepPersonalData'
 import { StepReservationDetails } from './components/FormSteps/StepReservationDetails'
 import { StepSummary } from './components/FormSteps/StepSummary'
 import { useFormPersistence } from './hooks/useFormPersistence'
+import { getAvailabilityConfig } from './lib/api'
 
 function App() {
   const currentStep = useReservationStore((state) => state.currentStep)
+  const setAvailabilityConfig = useReservationStore((state) => state.setAvailabilityConfig)
 
   // Initialize form persistence
   useFormPersistence()
+
+  // 1) Ao iniciar o app: check-availability-mercearia (disponibilidade geral)
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const config = await getAvailabilityConfig()
+        setAvailabilityConfig(config)
+      } catch (error) {
+        console.error('Error loading availability config:', error)
+        setAvailabilityConfig({
+          defaultTimeSlots: ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30'],
+          blockedDates: [],
+          exceptions: [],
+          blockedWeekdays: [0],
+          message: '',
+        })
+      }
+    }
+    load()
+  }, [setAvailabilityConfig])
 
   // Process offline queue when app loads
   useEffect(() => {

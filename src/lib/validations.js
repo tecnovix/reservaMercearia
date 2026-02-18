@@ -36,7 +36,8 @@ export const reservationTypeSchema = z.discriminatedUnion('tipoReserva', [
 
 // Step 3: Reservation Details Schema
 export const reservationDetailsSchema = z.object({
-  quantidadePessoas: z.number()
+  quantidadePessoas: z
+    .number({ invalid_type_error: 'Informe a quantidade de pessoas' })
     .min(4, 'Reserva mínima de 4 pessoas')
     .max(50, 'Máximo de 50 pessoas por reserva'),
   dataReserva: z.string().refine((date) => {
