@@ -4,8 +4,8 @@ import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
-import { reservationTypes, menuTypes, fileToBase64, compressImage } from '../../lib/utils'
-import { Upload, X, Cake, Users, Heart, Check, Image } from 'lucide-react'
+import { reservationTypes, fileToBase64, compressImage } from '../../lib/utils'
+import { Upload, X, Cake, PartyPopper, Heart, Check, Image } from 'lucide-react'
 
 export function StepReservationType() {
   const {
@@ -83,19 +83,14 @@ export function StepReservationType() {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    // Validate conditional fields
-    if (formData.tipoReserva === 'aniversario' && formData.reservaPainel) {
+    // Validate conditional fields (Aniversário e Despedida de Solteiro com painel)
+    const tipoComPainel = formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'despedida_solteiro'
+    if (tipoComPainel && formData.reservaPainel) {
       if (!formData.fotoPainel) {
         setImageError('Por favor, envie uma foto para o painel')
         return
       }
       if (!formData.orientacoesPainel) {
-        return
-      }
-    }
-
-    if (formData.tipoReserva === 'confraternizacao') {
-      if (!formData.tipoCardapio || !formData.orientacoesCompra) {
         return
       }
     }
@@ -120,7 +115,7 @@ export function StepReservationType() {
                 const isSelected = formData.tipoReserva === type.value
                 const icons = {
                   aniversario: Cake,
-                  confraternizacao: Users,
+                  despedida_solteiro: PartyPopper,
                   reuniao: Heart,
                 }
                 const Icon = icons[type.value] || Cake
@@ -160,8 +155,8 @@ export function StepReservationType() {
             </div>
           </div>
 
-          {/* Conditional fields for Aniversário */}
-          {formData.tipoReserva === 'aniversario' && (
+          {/* Conditional fields for Aniversário e Despedida de Solteiro (painel) */}
+          {(formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'despedida_solteiro') && (
             <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
               <div className={`
                 relative p-6 rounded-xl border-2 transition-all duration-300 overflow-hidden
@@ -188,7 +183,7 @@ export function StepReservationType() {
                             font-bold text-xl mb-1 transition-colors duration-200
                             ${formData.reservaPainel ? 'text-white' : 'text-yellow-200'}
                           `}>
-                            Painel de Aniversário
+                            {formData.tipoReserva === 'aniversario' ? 'Painel de Aniversário' : 'Painel de Despedida de Solteiro'}
                           </h3>
                           <p className={`
                             text-sm font-medium transition-colors duration-200
@@ -305,69 +300,6 @@ export function StepReservationType() {
                   </div>
                 </>
               )}
-            </div>
-          )}
-
-          {/* Conditional fields for Confraternização */}
-          {formData.tipoReserva === 'confraternizacao' && (
-            <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
-              <div className="space-y-3">
-                <Label>Tipo de Cardápio *</Label>
-                <div className="grid grid-cols-1 gap-3">
-                  {menuTypes.map((menu) => {
-                    const isSelected = formData.tipoCardapio === menu.value
-                    return (
-                      <button
-                        key={menu.value}
-                        type="button"
-                        onClick={() => updateFormData({ tipoCardapio: menu.value })}
-                        className={`
-                          relative p-4 rounded-lg border-2 transition-all duration-200 text-left
-                          ${isSelected
-                            ? 'border-orange-custom-600 bg-orange-custom-600/20 shadow-lg shadow-orange-custom-600/20'
-                            : 'border-gray-600 bg-gray-700 hover:border-gray-500 hover:bg-gray-600'
-                          }
-                        `}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className={`
-                            flex items-center justify-center w-10 h-10 rounded-lg
-                            ${isSelected ? 'bg-orange-custom-600 text-white' : 'bg-gray-600 text-gray-400'}
-                          `}>
-                            <Check className="w-5 h-5" />
-                          </div>
-                          <span className={`flex-1 font-medium ${isSelected ? 'text-white' : 'text-gray-300'}`}>
-                            {menu.label}
-                          </span>
-                          {isSelected && (
-                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-custom-600">
-                              <Check className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="orientacoesCompra">
-                  Orientações/Detalhes da Confraternização *
-                </Label>
-                <Textarea
-                  id="orientacoesCompra"
-                  placeholder="Descreva suas preferências e necessidades especiais"
-                  value={formData.orientacoesCompra}
-                  onChange={(e) =>
-                    updateFormData({ orientacoesCompra: e.target.value })
-                  }
-                  maxLength={500}
-                />
-                <p className="text-xs text-gray-400">
-                  {formData.orientacoesCompra.length}/500 caracteres
-                </p>
-              </div>
             </div>
           )}
 

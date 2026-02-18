@@ -5,7 +5,6 @@ import {
   formatDateBR,
   getReservationTypeLabel,
   getLocationLabel,
-  getMenuTypeLabel,
 } from '../../lib/utils'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
@@ -113,21 +112,12 @@ export function StepSummary() {
               </p>
             </div>
 
-            {formData.tipoReserva === 'aniversario' && formData.reservaPainel && (
+            {((formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'despedida_solteiro') && formData.reservaPainel) && (
               <>
                 <div>
-                  <Badge variant="secondary">Painel de Aniversário Reservado</Badge>
-                </div>
-              </>
-            )}
-
-            {formData.tipoReserva === 'confraternizacao' && (
-              <>
-                <div>
-                  <span className="text-sm text-gray-300">Tipo de Cardápio:</span>
-                  <p className="font-medium text-white">
-                    {getMenuTypeLabel(formData.tipoCardapio)}
-                  </p>
+                  <Badge variant="secondary">
+                    {formData.tipoReserva === 'aniversario' ? 'Painel de Aniversário Reservado' : 'Painel de Despedida de Solteiro Reservado'}
+                  </Badge>
                 </div>
               </>
             )}

@@ -5,7 +5,6 @@ import { reservationDetailsSchema } from '../../lib/validations'
 import {
   locationOptions,
   reservationTypes,
-  menuTypes,
   isPanelAllowedLocation,
 } from '../../lib/utils'
 import useReservationStore from '../../store/reservationStore'
@@ -18,7 +17,7 @@ import { Select } from '../ui/select'
 import { Textarea } from '../ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
-import { CheckCircle, Loader2, AlertCircle, AlertTriangle, Cake, Users, Heart, Check, Image, MapPin, X, FileText } from 'lucide-react'
+import { CheckCircle, Loader2, AlertCircle, AlertTriangle, Cake, PartyPopper, Heart, Check, Image, MapPin, X, FileText } from 'lucide-react'
 
 export function StepReservationDetails() {
   const {
@@ -75,11 +74,15 @@ export function StepReservationDetails() {
   const handleTypeChange = (type) => {
     updateFormData({
       tipoReserva: type,
-      // Reset conditional fields when changing type
       reservaPainel: false,
+      fotoPainel: null,
+      fotoPainelPreview: null,
+      orientacoesPainel: '',
       tipoCardapio: '',
     })
   }
+
+  const tipoComPainel = formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'despedida_solteiro'
 
 
   // Sempre que a data mudar: buscar config atualizada (check-availability-mercearia)
@@ -152,7 +155,7 @@ export function StepReservationDetails() {
         setDateAvailable(true)
         setAvailableTimeSlots(exception.timeSlots)
         setAvailabilityMessage(exception.message || '')
-        if (formData.tipoReserva === 'aniversario' && formData.reservaPainel) {
+        if (tipoComPainel && formData.reservaPainel) {
           clearTimeout(dateDebounce)
           const t = setTimeout(() => {
             checkPanelAvailability(watchedDate, watchedQuantidadePessoas, watchedLocalDesejado).then((r) => r && setPanelMessage(r.message || ''))
@@ -186,7 +189,7 @@ export function StepReservationDetails() {
     setAvailableTimeSlots(defaultTimeSlots)
     setAvailabilityMessage('')
 
-    if (formData.tipoReserva === 'aniversario' && formData.reservaPainel) {
+    if (tipoComPainel && formData.reservaPainel) {
       clearTimeout(dateDebounce)
       const t = setTimeout(() => {
         checkPanelAvailability(watchedDate, watchedQuantidadePessoas, watchedLocalDesejado).then((r) => r && setPanelMessage(r.message || ''))
@@ -224,27 +227,11 @@ export function StepReservationDetails() {
       return
     }
 
-    // Validate conditional fields for anniversary
-    if (formData.tipoReserva === 'aniversario' && formData.reservaPainel) {
-      // If panel not available, prevent submission
-      if (panelAvailable === false) {
-        return
-      }
-      // Additional validation: panel requires minimum 10 people
-      if (watchedQuantidadePessoas < 10) {
-        return
-      }
-      // Additional validation: panel requires allowed location
-      if (!isPanelAllowedLocation(watchedLocalDesejado)) {
-        return
-      }
-    }
-
-    // Validate conditional fields for party
-    if (formData.tipoReserva === 'confraternizacao') {
-      if (!formData.tipoCardapio) {
-        return
-      }
+    // Validate conditional fields for aniversário e despedida de solteiro com painel
+    if (tipoComPainel && formData.reservaPainel) {
+      if (panelAvailable === false) return
+      if (watchedQuantidadePessoas < 10) return
+      if (!isPanelAllowedLocation(watchedLocalDesejado)) return
     }
 
     updateFormData(data)
@@ -292,7 +279,7 @@ export function StepReservationDetails() {
                 const isSelected = formData.tipoReserva === type.value
                 const icons = {
                   aniversario: Cake,
-                  confraternizacao: Users,
+                  despedida_solteiro: PartyPopper,
                   reuniao: Heart,
                 }
                 const Icon = icons[type.value] || Cake
@@ -331,68 +318,6 @@ export function StepReservationDetails() {
               })}
             </div>
           </div>
-
-          {/* Conditional fields for Confraternização */}
-          {formData.tipoReserva === 'confraternizacao' && (
-            <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
-              <div className="space-y-3">
-                <Label>Tipo de Cardápio *</Label>
-                <div className="grid grid-cols-1 gap-3">
-                  {menuTypes.map((menu) => {
-                    const isSelected = formData.tipoCardapio === menu.value
-                    return (
-                      <button
-                        key={menu.value}
-                        type="button"
-                        onClick={() => updateFormData({ tipoCardapio: menu.value })}
-                        className={`
-                          relative p-4 rounded-lg border-2 transition-all duration-200 text-left
-                          ${isSelected
-                            ? 'border-orange-custom-600 bg-orange-custom-600/20 shadow-lg shadow-orange-custom-600/20'
-                            : 'border-gray-600 bg-gray-700 hover:border-gray-500 hover:bg-gray-600'
-                          }
-                        `}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className={`
-                            flex items-center justify-center w-10 h-10 rounded-lg
-                            ${isSelected ? 'bg-orange-custom-600 text-white' : 'bg-gray-600 text-gray-400'}
-                          `}>
-                            <Check className="w-5 h-5" />
-                          </div>
-                          <span className={`flex-1 font-medium ${isSelected ? 'text-white' : 'text-gray-300'}`}>
-                            {menu.label}
-                          </span>
-                          {isSelected && (
-                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-custom-600">
-                              <Check className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="p-4 bg-gray-700 rounded-lg border border-gray-600">
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <p className="text-orange-custom-600 font-semibold mb-2">
-                        Orientações:
-                      </p>
-                      <ul className="space-y-2 text-gray-200">
-                        <li>• Nosso site nós temos todas as orientações sobre a confraternização de empresas.</li>
-                        <li>• Link: <a href="https://www.barmercearia.com.br/empresas" target="_blank" rel="noopener noreferrer" className="text-orange-custom-400 hover:text-orange-custom-300 underline">https://www.barmercearia.com.br/empresas</a></li>
-                        <li>• Dúvidas mandar via WhatsApp.</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -528,8 +453,8 @@ export function StepReservationDetails() {
             </div>
           </div>
 
-          {/* Conditional fields for Aniversário - após Local Desejado, antes de Observações */}
-          {formData.tipoReserva === 'aniversario' && (
+          {/* Conditional fields for Aniversário e Despedida de Solteiro (painel) */}
+          {tipoComPainel && (
             <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
               <div className={`
                 relative p-6 rounded-xl border-2 transition-all duration-300 overflow-hidden
@@ -556,7 +481,7 @@ export function StepReservationDetails() {
                             font-bold text-xl mb-1 transition-colors duration-200 flex items-center gap-2
                             ${formData.reservaPainel ? 'text-white' : 'text-yellow-200'}
                           `}>
-                            Painel de Aniversário
+                            {formData.tipoReserva === 'aniversario' ? 'Painel de Aniversário' : 'Painel de Despedida de Solteiro'}
                             {formData.reservaPainel && (panelAvailable === false || panelAvailabilityError) && (
                               <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-400" aria-hidden />
                             )}
@@ -682,7 +607,7 @@ export function StepReservationDetails() {
                 (watchedDate &&
                   watchedLocalDesejado &&
                   (checkingSpotsAvailability || spotsAvailable === false || spotsAvailable === null)) ||
-                (formData.tipoReserva === 'aniversario' &&
+                (tipoComPainel &&
                   formData.reservaPainel &&
                   panelAvailable === false)
               }
@@ -764,7 +689,7 @@ export function StepReservationDetails() {
               className="max-h-80 w-auto rounded-lg shadow-lg object-contain"
             />
             <p className="text-sm text-gray-300 text-center">
-              Este é o modelo do painel de aniversário que será disponibilizado gratuitamente.
+              Este é o modelo do painel que será disponibilizado gratuitamente.
             </p>
           </div>
         </div>
@@ -778,7 +703,7 @@ export function StepReservationDetails() {
         onClick={() => setPanelOrientacoesModalOpen(false)}
         role="dialog"
         aria-modal="true"
-        aria-label="Orientações do Painel de Aniversário"
+        aria-label="Orientações do Painel"
       >
         <div
           className="relative max-w-lg w-full max-h-[90vh] flex flex-col bg-gray-900 rounded-xl shadow-xl overflow-hidden"
@@ -800,7 +725,7 @@ export function StepReservationDetails() {
           <div className="flex-1 overflow-auto p-4 space-y-4 bg-gray-800 text-sm">
             <div>
               <p className="text-orange-custom-600 font-semibold mb-2">
-                🎉 Orientações do Painel de Aniversário
+                Orientações do Painel
               </p>
               <ul className="space-y-1 text-gray-200 ml-4">
                 <li>• Painel gratuito: inclui apenas a estrutura (não acompanha decoração).</li>
@@ -810,7 +735,7 @@ export function StepReservationDetails() {
             </div>
             <div>
               <p className="text-orange-custom-600 font-semibold mb-2">
-                ✨ Arco de balões (opcional)
+                Arco de balões (opcional)
               </p>
               <ul className="space-y-1 text-gray-200 ml-4">
                 <li>• R$ 80 com balões inclusos (até 2 cores).</li>

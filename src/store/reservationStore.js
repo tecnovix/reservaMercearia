@@ -115,11 +115,6 @@ const useReservationStore = create(
             // Combine validations from old steps 2 and 3
             if (!formData.tipoReserva) return false
 
-            // Check type-specific requirements
-            if (formData.tipoReserva === 'confraternizacao') {
-              if (!formData.tipoCardapio) return false
-            }
-
             // Check reservation details
             return !!(
               formData.quantidadePessoas > 0 &&
@@ -149,7 +144,10 @@ const useReservationStore = create(
           tipoReserva: {
             tipo: formData.tipoReserva,
             reservaPainel: formData.reservaPainel || false,
+            fotoPainel: formData.fotoPainel || null,
+            orientacoesPainel: formData.orientacoesPainel || null,
             tipoCardapio: formData.tipoCardapio || null,
+            orientacoesCompra: formData.orientacoesCompra || null,
           },
           detalhesReserva: {
             quantidadePessoas: formData.quantidadePessoas,
