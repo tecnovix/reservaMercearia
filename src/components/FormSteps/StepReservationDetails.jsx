@@ -17,7 +17,7 @@ import { Select } from '../ui/select'
 import { Textarea } from '../ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
-import { CheckCircle, Loader2, AlertCircle, AlertTriangle, Cake, PartyPopper, Heart, Check, Image, MapPin, X, FileText } from 'lucide-react'
+import { CheckCircle, Loader2, AlertCircle, AlertTriangle, Cake, GraduationCap, Building2, Heart, Check, Image, MapPin, X, FileText } from 'lucide-react'
 
 export function StepReservationDetails() {
   const {
@@ -82,7 +82,7 @@ export function StepReservationDetails() {
     })
   }
 
-  const tipoComPainel = formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'despedida_solteiro'
+  const tipoComPainel = formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'formatura'
 
 
   // Sempre que a data mudar: buscar config atualizada (check-availability-mercearia)
@@ -227,7 +227,7 @@ export function StepReservationDetails() {
       return
     }
 
-    // Validate conditional fields for aniversário e despedida de solteiro com painel
+    // Validate conditional fields for aniversário e formatura com painel
     if (tipoComPainel && formData.reservaPainel) {
       if (panelAvailable === false) return
       if (watchedQuantidadePessoas < 10) return
@@ -279,7 +279,8 @@ export function StepReservationDetails() {
                 const isSelected = formData.tipoReserva === type.value
                 const icons = {
                   aniversario: Cake,
-                  despedida_solteiro: PartyPopper,
+                  formatura: GraduationCap,
+                  confraternizacao_empresa: Building2,
                   reuniao: Heart,
                 }
                 const Icon = icons[type.value] || Cake
@@ -453,7 +454,7 @@ export function StepReservationDetails() {
             </div>
           </div>
 
-          {/* Conditional fields for Aniversário e Despedida de Solteiro (painel) */}
+          {/* Conditional fields for Aniversário e Formatura (painel) */}
           {tipoComPainel && (
             <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
               <div className={`
@@ -481,7 +482,7 @@ export function StepReservationDetails() {
                             font-bold text-xl mb-1 transition-colors duration-200 flex items-center gap-2
                             ${formData.reservaPainel ? 'text-white' : 'text-yellow-200'}
                           `}>
-                            {formData.tipoReserva === 'aniversario' ? 'Painel de Aniversário' : 'Painel de Despedida de Solteiro'}
+                            {formData.tipoReserva === 'aniversario' ? 'Painel de Aniversário' : 'Painel de Formatura'}
                             {formData.reservaPainel && (panelAvailable === false || panelAvailabilityError) && (
                               <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-400" aria-hidden />
                             )}

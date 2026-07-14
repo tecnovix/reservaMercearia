@@ -5,7 +5,7 @@ import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { reservationTypes, fileToBase64, compressImage } from '../../lib/utils'
-import { Upload, X, Cake, PartyPopper, Heart, Check, Image } from 'lucide-react'
+import { Upload, X, Cake, GraduationCap, Building2, Heart, Check, Image } from 'lucide-react'
 
 export function StepReservationType() {
   const {
@@ -83,8 +83,8 @@ export function StepReservationType() {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    // Validate conditional fields (Aniversário e Despedida de Solteiro com painel)
-    const tipoComPainel = formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'despedida_solteiro'
+    // Validate conditional fields (Aniversário e Formatura com painel)
+    const tipoComPainel = formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'formatura'
     if (tipoComPainel && formData.reservaPainel) {
       if (!formData.fotoPainel) {
         setImageError('Por favor, envie uma foto para o painel')
@@ -115,7 +115,8 @@ export function StepReservationType() {
                 const isSelected = formData.tipoReserva === type.value
                 const icons = {
                   aniversario: Cake,
-                  despedida_solteiro: PartyPopper,
+                  formatura: GraduationCap,
+                  confraternizacao_empresa: Building2,
                   reuniao: Heart,
                 }
                 const Icon = icons[type.value] || Cake
@@ -155,8 +156,8 @@ export function StepReservationType() {
             </div>
           </div>
 
-          {/* Conditional fields for Aniversário e Despedida de Solteiro (painel) */}
-          {(formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'despedida_solteiro') && (
+          {/* Conditional fields for Aniversário e Formatura (painel) */}
+          {(formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'formatura') && (
             <div className="space-y-4 p-4 border border-custom rounded-lg bg-gray-800">
               <div className={`
                 relative p-6 rounded-xl border-2 transition-all duration-300 overflow-hidden
@@ -183,7 +184,7 @@ export function StepReservationType() {
                             font-bold text-xl mb-1 transition-colors duration-200
                             ${formData.reservaPainel ? 'text-white' : 'text-yellow-200'}
                           `}>
-                            {formData.tipoReserva === 'aniversario' ? 'Painel de Aniversário' : 'Painel de Despedida de Solteiro'}
+                            {formData.tipoReserva === 'aniversario' ? 'Painel de Aniversário' : 'Painel de Formatura'}
                           </h3>
                           <p className={`
                             text-sm font-medium transition-colors duration-200

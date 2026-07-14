@@ -25,10 +25,13 @@ export const reservationTypeSchema = z.discriminatedUnion('tipoReserva', [
     orientacoesPainel: z.string().max(500, 'Máximo de 500 caracteres'),
   }),
   z.object({
-    tipoReserva: z.literal('despedida_solteiro'),
+    tipoReserva: z.literal('formatura'),
     reservaPainel: z.boolean(),
     fotoPainel: z.string().nullable(),
     orientacoesPainel: z.string().max(500, 'Máximo de 500 caracteres'),
+  }),
+  z.object({
+    tipoReserva: z.literal('confraternizacao_empresa'),
   }),
   z.object({
     tipoReserva: z.literal('reuniao'),

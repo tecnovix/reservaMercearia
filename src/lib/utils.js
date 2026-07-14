@@ -115,7 +115,8 @@ export const locationOptions = [
 
 export const reservationTypes = [
   { value: 'aniversario', label: 'Aniversário' },
-  { value: 'despedida_solteiro', label: 'Despedida de Solteiro' },
+  { value: 'formatura', label: 'Formatura' },
+  { value: 'confraternizacao_empresa', label: 'Confraternização de Empresa' },
   { value: 'reuniao', label: 'Reunião de Família ou Amigos' },
 ]
 

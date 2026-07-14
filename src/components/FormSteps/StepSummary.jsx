@@ -112,11 +112,11 @@ export function StepSummary() {
               </p>
             </div>
 
-            {((formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'despedida_solteiro') && formData.reservaPainel) && (
+            {((formData.tipoReserva === 'aniversario' || formData.tipoReserva === 'formatura') && formData.reservaPainel) && (
               <>
                 <div>
                   <Badge variant="secondary">
-                    {formData.tipoReserva === 'aniversario' ? 'Painel de Aniversário Reservado' : 'Painel de Despedida de Solteiro Reservado'}
+                    {formData.tipoReserva === 'aniversario' ? 'Painel de Aniversário Reservado' : 'Painel de Formatura Reservado'}
                   </Badge>
                 </div>
               </>
